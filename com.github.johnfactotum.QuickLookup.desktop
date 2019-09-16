@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Quick Lookup
+GenericName=Dictionary
+Comment=Lookup words in dictionary
+Categories=Office;Dictionary;
+Exec=/usr/bin/quick-lookup
+Icon=accessories-dictionary
+Terminal=false
+Type=Application
