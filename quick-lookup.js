@@ -185,10 +185,10 @@ class AppWindow {
             application: this._app,
             defaultHeight: 450,
             defaultWidth: 500,
-            title: 'Quick Lookup'
         })
         const headerBar = new Gtk.HeaderBar({ show_close_button: true })
         window.set_titlebar(headerBar)
+        window.title = 'Quick Lookup'
 
         const queryEntry = new Gtk.SearchEntry({
             placeholder_text: 'Word or phrase',
