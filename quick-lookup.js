@@ -205,6 +205,9 @@ class AppWindow {
             tooltip_text: 'Enter language name or ISO 639-1 code',
             width_chars: 10
         })
+        langEntry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY,
+            'preferences-desktop-locale-symbolic')
+        langEntry.set_icon_sensitive(Gtk.EntryIconPosition.PRIMARY, false)
         const lookup = () => {
             if (this._currentPage) this._pushHistory(this._currentPage)
             this._lookup(this._queryEntry.text, this._langEntry.text)
