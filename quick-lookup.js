@@ -26,7 +26,7 @@ const baseURL = 'https://en.wiktionary.org/'
 const lookupHtml = `<script>
 const dispatch = action => {
     const obj = { time: new Date().getTime(), ...action }
-    document.title = JSON.stringify(obj)
+    window.webkit.messageHandlers.action.postMessage(JSON.stringify(obj))
 }
 
 // from https://stackoverflow.com/a/11892228
@@ -94,7 +94,7 @@ const wiktionary = (word, language = 'en') =>
         })
         .then(res => res.json())
         .then(json => {
-            results = language.length === 2
+            const results = language.length === 2
                 ? json[language]
                 : Object.values(json).find(x => x[0].language === language)
             
@@ -106,9 +106,9 @@ const wiktionary = (word, language = 'en') =>
                             toPangoMarkup(ex, baseURL))
                 })
             })
-            lookupResults = { word: decodeURIComponent(word), results }
+            return { word: decodeURIComponent(word), results }
         })
-        .then(() => dispatch({ type: 'lookup-results' }))
+        .then(payload => dispatch({ type: 'lookup-results', payload }))
         .catch(e => {
             console.error(e)
             word = decodeURI(word)
@@ -129,21 +129,14 @@ const lookup = (script, againScript) => new Promise((resolve, reject) => {
             allow_universal_access_from_file_urls: true
         })
     })
-    const scriptRun = script =>
-        webView.run_javascript(script, null, () => {})
-    const scriptGet = (script, f) => {
-        webView.run_javascript(`JSON.stringify(${script})`, null,
-            (self, result) => {
-                const jsResult = self.run_javascript_finish(result)
-                const value = jsResult.get_js_value()
-                const obj = JSON.parse(value.to_string())
-                f(obj)
-            })
-    }
+    const scriptRun = script => webView.run_javascript(script, null, () => {})
+
     webView.load_html(lookupHtml, null)
 
-    webView.connect('notify::title', self => {
-        const { type, payload } = JSON.parse(self.title)
+    const contentManager = webView.get_user_content_manager()
+    contentManager.connect('script-message-received::action', (_, message) => {
+        const data = message.get_js_value().to_string()
+        const { type, payload } = JSON.parse(data)
         switch (type) {
             case 'can-lookup':
                 scriptRun(script)
@@ -152,13 +145,14 @@ const lookup = (script, againScript) => new Promise((resolve, reject) => {
                 scriptRun(againScript(payload))
                 break
             case 'lookup-results':
-                scriptGet(`lookupResults`, resolve)
+                resolve(payload)
                 break
             case 'lookup-error':
                 reject()
                 break
         }
     })
+    contentManager.register_script_message_handler('action')
 })
 
 const wiktionary = (word, language) =>
