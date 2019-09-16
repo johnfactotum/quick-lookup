@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+    <id>com.github.johnfactotum.QuickLookup</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0-or-later</project_license>
+    <name>Quick Lookup</name>
+    <summary>A simple dictionary application powered by Wiktionary</summary>
+    <description>
+        <p>Quick Lookup is a simple GTK dictionary application powered by Wiktionary.</p>>
+        <p>Features include:</p>
+        <ul>
+            <li>Lookup definitions for words or phrases</li>
+            <li>Choose language by entering language name or ISO-639-1 code</li>
+            <li>Open internal links within the app</li>
+            <li>Go back to previous page with the back button</li>
+        </ul>
+    </description>
+    <developer_name>John Factotum</developer_name>
+    <url type="bugtracker">https://github.com/johnfactotum/quick-lookup/issues</url>
+    <url type="homepage">https://github.com/johnfactotum/quick-lookup</url>
+    <screenshots>
+        <screenshot type="default">
+            <image type="source">https://raw.githubusercontent.com/johnfactotum/quick-lookup/master/screenshot.png</image>
+        </screenshot>
+    </screenshots>
+    <content_rating type="oars-1.1" />
+</component>
