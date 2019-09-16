@@ -21,8 +21,8 @@ Dependencies:
 To install, run
 
 ```bash
-sudo cp quick-lookup /usr/bin
-sudo cp com.github.johnfactotum.QuickLookup.desktop /usr/share/applications
+sudo install -D quick-lookup.js /usr/bin/quick-lookup
+sudo install com.github.johnfactotum.QuickLookup.desktop /usr/share/applications
 ```
 
 To uninstall, run
@@ -35,7 +35,7 @@ sudo rm /usr/share/applications/com.github.johnfactotum.QuickLookup.desktop
 ### Run without installing
 
 ```bash
-./quick-lookup
+gjs quick-lookup.js
 ```
 
 ## FAQ
