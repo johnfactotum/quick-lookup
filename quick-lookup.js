@@ -171,6 +171,12 @@ class AppWindow {
         this._history = []
         this._currentPage = null
     }
+    _addShortcut(accels, name, func) {
+        const action = new Gio.SimpleAction({ name })
+        action.connect('activate', func)
+        this._window.add_action(action)
+        this._app.set_accels_for_action(`win.${name}`, accels)
+    }
     _goBack() {
         if (!this._history.length) return
         this._lookup(...this._history.pop())
@@ -247,6 +253,15 @@ class AppWindow {
         this._window = window
         this._queryEntry = queryEntry
         this._langEntry = langEntry
+
+        this._addShortcut(['<Control>w', '<Control>q'],
+            'close', () => this._window.close())
+        this._addShortcut(['<Alt>Left'],
+            'go-back', () => this._goBack())
+        this._addShortcut(['<Control>f', 'F6'],
+            'query-entry', () => this._queryEntry.grab_focus())
+        this._addShortcut(['<Control>l'],
+            'lang-entry', () => this._langEntry.grab_focus())
     }
     _lookup(query, language) {
         this._currentPage = [query, language]
