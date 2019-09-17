@@ -397,9 +397,6 @@ class AppWindow {
                 })
             })
 
-            const scroll = new Gtk.ScrolledWindow()
-            scroll.add(grid)
-
             const sourceLabel = new Gtk.Label({
                 label: `<small>Source: <a href="${baseURL}wiki/${
                     GLib.markup_escape_text(word, -1)
@@ -408,15 +405,18 @@ class AppWindow {
                 use_markup: true
             })
             sourceLabel.get_style_context().add_class('dim-label')
-            const sourceBox = new Gtk.Box({ border_width: 10 })
-            sourceBox.pack_start(sourceLabel, true, true, 0)
+            const sourceBox = new Gtk.Box({ border_width: 18 })
+            sourceBox.pack_end(sourceLabel, false, true, 0)
 
             const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL })
-            box.pack_start(scroll, true, true, 0)
+            box.pack_start(grid, true, true, 0)
             box.pack_end(sourceBox, false, true, 0)
 
+            const scroll = new Gtk.ScrolledWindow()
+            scroll.add(box)
+
             this._window.remove(this._content)
-            this._content = box
+            this._content = scroll
             this._window.add(this._content)
             this._content.show_all()
         }).catch(e => {
