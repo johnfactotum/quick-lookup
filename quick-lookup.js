@@ -30,6 +30,18 @@ const wikiNamespaces = [
     'Thesaurus', 'Citations', 'Sign'
 ]
 
+// by no means a complete list; no particular order or criteria
+const suggestedLangs = [
+    'English', 'French', 'Spanish', 'Italian', 'Portuguese', 'Romanian',
+    'German', 'Dutch', 'Finnish', 'Hungarian', 'Greek', 'Irish', 'Catalan',
+    'Swedish', 'Danish', 'Norwegian Bokmål', 'Norwegian Nynorsk', 'Icelandic',
+    'Russian', 'Polish', 'Czech', 'Serbo-Croatian', 'Bulgarian',
+    'Armenian', 'Georgian', 'Albanian', 'Lithuanian', 'Welsh', 'Zulu',
+    'Chinese', 'Japanese', 'Korean', 'Vietnamese', 'Thai', 'Tagalog',
+    'Arabic', 'Persian', 'Turkish', 'Hindi', 'Urdu', 'Indonesian',
+    'Latin', 'Ancient Greek', 'Sanskrit', 'Hebrew', 'Esperanto'
+].sort()
+
 const lookupHtml = `<script>
 const dispatch = action => {
     const obj = { time: new Date().getTime(), ...action }
@@ -159,14 +171,21 @@ class AppWindow {
             placeholder_text: 'Word or phrase',
             tooltip_text: 'Word or phrase to look up'
         })
-        const langEntry = new Gtk.Entry({
-            placeholder_text: 'Language',
-            tooltip_text: 'Language name or ISO 639-1 code',
-            width_chars: 10
-        })
+        const langCombo = Gtk.ComboBoxText.new_with_entry()
+        langCombo.wrap_width = 3
+        suggestedLangs.forEach(text => langCombo.append_text(text))
+
+        const langEntry = langCombo.get_child()
+        langEntry.placeholder_text = 'Language'
+        langEntry.tooltip_text = 'Language name or ISO 639-1 code'
+        langEntry.width_chars = 10
         langEntry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY,
             'preferences-desktop-locale-symbolic')
         langEntry.set_icon_sensitive(Gtk.EntryIconPosition.PRIMARY, false)
+        const completion = new Gtk.EntryCompletion()
+        completion.set_text_column(0)
+        completion.set_model(langCombo.get_model())
+        langEntry.set_completion(completion)
 
         const lookup = () => {
             if (this._currentPage) this._pushHistory(this._currentPage)
@@ -176,7 +195,7 @@ class AppWindow {
         queryEntry.connect('activate', lookup)
 
         const box = new Gtk.Box({ spacing: 6 })
-        box.pack_start(langEntry, false, true, 0)
+        box.pack_start(langCombo, false, true, 0)
         box.pack_start(queryEntry, true, true, 0)
         headerBar.custom_title = box
 
