@@ -18,10 +18,16 @@ imports.gi.versions.Gtk = '3.0'
 const { GLib, Gio, Gtk } = imports.gi
 const Webkit = imports.gi.WebKit2
 
-const isExternalURL = href =>
-    href.indexOf("mailto:") === 0 || href.indexOf("://") > -1
-
 const baseURL = 'https://en.wiktionary.org/'
+const baseWikiRegExp = new RegExp('^https://en.wiktionary.org/wiki/')
+
+// see https://en.wiktionary.org/wiki/Wiktionary:Namespace
+const wikiNamespaces = [
+    'Media', 'Special', 'Talk', 'User', 'Wiktionary', 'File', 'MediaWiki',
+    'Template', 'Help', 'Category',
+    'Summary', 'Appendix', 'Concordance', 'Index', 'Rhymes', 'Transwiki',
+    'Thesaurus', 'Citations', 'Sign'
+]
 
 const lookupHtml = `<script>
 const dispatch = action => {
@@ -40,28 +46,6 @@ const usurp = p => {
     p.parentNode.removeChild(p)
 }
 
-// see https://en.wiktionary.org/wiki/Wiktionary:Namespace
-const wiktionaryNamespaces = [
-    'Media',
-    'Special',
-    'Talk',
-    'User',
-    'Wiktionary',
-    'File',
-    'MediaWiki',
-    'Template',
-    'Help',
-    'Category',
-    'Summary',
-    'Appendix',
-    'Concordance',
-    'Index',
-    'Rhymes',
-    'Transwiki',
-    'Thesaurus',
-    'Citations',
-    'Sign'
-]
 const pangoMarkupTags =
     ['a', 'b', 'big', 'i', 's', 'sub', 'sup', 'small', 'tt', 'u']
 const toPangoMarkup = (html, baseURL = '') => {
@@ -72,11 +56,7 @@ const toPangoMarkup = (html, baseURL = '') => {
         else Array.from(el.attributes).forEach(x => {
             if (x.name === 'href') {
                 const href = el.getAttribute('href')
-                if (!href.startsWith('/wiki/')
-                    || wiktionaryNamespaces.some(namespace =>
-                        href.startsWith('/wiki/' + namespace + ':')
-                        || href.startsWith('/wiki/' + namespace + '_talk:')))
-                    el.setAttribute('href', new URL(href, baseURL))
+                el.setAttribute('href', new URL(href, baseURL))
             } else el.removeAttribute(x.name)
         })
         if (nodeName === 'a' && !el.hasAttribute('href')) usurp(el)
@@ -277,8 +257,10 @@ class AppWindow {
         this._content.show_all()
     
         const handleLink = (_, uri) => {
-            const internalLink = uri.split(/^\/wiki\//)[1]
-            if (internalLink) {
+            const internalLink = uri.split(baseWikiRegExp)[1]
+            if (internalLink && wikiNamespaces.every(namespace =>
+                !internalLink.startsWith(namespace + ':')
+                && !internalLink.startsWith(namespace + '_talk:'))) {
                 this._pushHistory([query, language])
                 const [title, lang] = internalLink.split('#')
                 const word = decodeURIComponent(title)
