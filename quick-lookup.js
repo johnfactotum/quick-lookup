@@ -300,8 +300,7 @@ class AppWindow {
                     const langLabel = new Gtk.Label({
                         label: `<small>${language}</small>`,
                         xalign: 0,
-                        use_markup: true,
-                        selectable: true
+                        use_markup: true
                     })
                     langLabel.get_style_context().add_class('dim-label')
                     grid.attach(langLabel, 1, row, 1, 1)
@@ -327,8 +326,7 @@ class AppWindow {
                 const posLabel = new Gtk.Label({
                     label: `<i>${partOfSpeech}</i>`,
                     xalign: 0,
-                    use_markup: true,
-                    selectable: true
+                    use_markup: true
                 })
                 posLabel.get_style_context().add_class('dim-label')
                 posBox.pack_start(posLabel, false, true, 0)
@@ -345,8 +343,7 @@ class AppWindow {
                     const label = new Gtk.Label({
                         label: i + 1 + '.',
                         valign: Gtk.Align.START,
-                        halign: Gtk.Align.END,
-                        selectable: true
+                        halign: Gtk.Align.END
                     })
                     label.get_style_context().add_class('dim-label')
                     grid.attach(label, 0, row, 1, 1)
