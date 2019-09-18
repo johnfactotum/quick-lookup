@@ -249,6 +249,8 @@ class AppWindow {
 
         const box = new Gtk.Box({ border_width: 18 })
         const spinner = new Gtk.Spinner({
+            valign: Gtk.Align.CENTER,
+            halign: Gtk.Align.CENTER,
             width_request: 48,
             height_request: 48
         })
