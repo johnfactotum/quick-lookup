@@ -38,6 +38,19 @@ sudo rm /usr/share/applications/com.github.johnfactotum.QuickLookup.desktop
 gjs quick-lookup.js
 ```
 
+### Flatpak
+
+#### Building Flatpaks manually
+
+##### Using Gnome Builder
+Open [Gnome Builder](https://wiki.gnome.org/Apps/Builder), choose "Clone Repository…", and follow the instructions. After cloning the project, hit Ctrl+F5 to build and run.
+
+##### Using `flatpak-builder`
+
+```bash
+flatpak-builder --force-clean --install --user build com.github.johnfactotum.QuickLookup.json
+```
+
 ## FAQ
 
 ### Why does it only support English Wiktionary?
