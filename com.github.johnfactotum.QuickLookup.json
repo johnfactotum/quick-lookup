@@ -1,0 +1,40 @@
+{
+    "app-id": "com.github.johnfactotum.QuickLookup",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "3.32",
+    "sdk": "org.gnome.Sdk",
+    "command": "quick-lookup",
+    "finish-args": [
+        "--share=network",
+        "--share=ipc",
+        "--socket=x11",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--device=dri"
+    ],
+    "modules": [
+        {
+            "name": "quick-lookup",
+            "buildsystem": "simple",
+            "build-commands" : [
+                "install -D quick-lookup.js /app/bin/quick-lookup",
+                "install -D com.github.johnfactotum.QuickLookup.desktop /app/share/applications/com.github.johnfactotum.QuickLookup.desktop",
+                "install -D com.github.johnfactotum.QuickLookup.appdata.xml /app/share/metainfo/com.github.johnfactotum.QuickLookup.appdata.xml"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "path": "quick-lookup.js"
+                },
+                {
+                    "type": "file",
+                    "path": "com.github.johnfactotum.QuickLookup.desktop"
+                },
+                {
+                    "type": "file",
+                    "path": "com.github.johnfactotum.QuickLookup.appdata.xml"
+                }
+            ]
+        }
+    ]
+}
