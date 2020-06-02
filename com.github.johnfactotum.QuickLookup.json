@@ -19,7 +19,9 @@
             "build-commands" : [
                 "install -D quick-lookup.js /app/bin/quick-lookup",
                 "install -D com.github.johnfactotum.QuickLookup.desktop /app/share/applications/com.github.johnfactotum.QuickLookup.desktop",
-                "install -D com.github.johnfactotum.QuickLookup.appdata.xml /app/share/metainfo/com.github.johnfactotum.QuickLookup.appdata.xml"
+                "install -D com.github.johnfactotum.QuickLookup.appdata.xml /app/share/metainfo/com.github.johnfactotum.QuickLookup.appdata.xml",
+                "install -D com.github.johnfactotum.QuickLookup.svg /app/share/icons/hicolor/scalable/apps/com.github.johnfactotum.QuickLookup.svg",
+                "install -D com.github.johnfactotum.QuickLookup-symbolic.svg /app/share/icons/hicolor/symbolic/apps/com.github.johnfactotum.QuickLookup-symbolic.svg"
             ],
             "sources": [
                 {
@@ -33,6 +35,14 @@
                 {
                     "type": "file",
                     "path": "com.github.johnfactotum.QuickLookup.appdata.xml"
+                },
+                {
+                    "type": "file",
+                    "path": "com.github.johnfactotum.QuickLookup.svg"
+                },
+                {
+                    "type": "file",
+                    "path": "com.github.johnfactotum.QuickLookup-symbolic.svg"
                 }
             ]
         }
