@@ -6,7 +6,7 @@
     <name>Quick Lookup</name>
     <summary>A simple dictionary application powered by Wiktionary</summary>
     <description>
-        <p>Quick Lookup is a simple GTK dictionary application powered by Wiktionary.</p>>
+        <p>Quick Lookup is a simple GTK dictionary application powered by Wiktionary™.</p>
         <p>Features include:</p>
         <ul>
             <li>Lookup definitions for words or phrases</li>
@@ -14,6 +14,7 @@
             <li>Open internal links within the app</li>
             <li>Go back to previous page with the back button</li>
         </ul>
+        <p>Wiktionary is a trademark of the Wikimedia Foundation. This program is not endorsed by or affiliated with the Wikimedia Foundation.</p>
     </description>
     <developer_name>John Factotum</developer_name>
     <url type="bugtracker">https://github.com/johnfactotum/quick-lookup/issues</url>
@@ -23,5 +24,12 @@
             <image type="source">https://raw.githubusercontent.com/johnfactotum/quick-lookup/master/screenshot.png</image>
         </screenshot>
     </screenshots>
+    <releases>
+        <release version="1.0.0" date="2019-06-02">
+            <description>
+                <p>Initial release</p>
+            </description>
+        </release>
+    </releases>
     <content_rating type="oars-1.1" />
 </component>
