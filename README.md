@@ -2,7 +2,7 @@
 
 Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](https://en.wiktionary.org/).
 
-![Screenshot](screenshot.png)
+<img src="screenshot.png" alt="Screenshot" width="552">
 
 ## Features
 
