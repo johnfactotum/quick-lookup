@@ -1,6 +1,6 @@
 # Quick Lookup
 
-Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](https://en.wiktionary.org/).
+Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](https://en.wiktionary.org/)™.
 
 <img src="screenshot.png" alt="Screenshot" width="552">
 
@@ -67,3 +67,6 @@ Because I'm lazy and I used the DOM APIs provided by WebKit to manipulate HTML m
 
 Probably not, because I'm lazy.
 
+---
+
+Wiktionary is a trademark of the Wikimedia Foundation. This program is not endorsed by or affiliated with the Wikimedia Foundation.
