@@ -219,7 +219,7 @@ class AppWindow {
         })
         image.get_style_context().add_class('dim-label')
         const label =  new Gtk.Label({
-            label: '“ Language is a city to the building of which every human being brought a stone.”―Ralph Waldo Emerson',
+            label: '“Language is a city to the building of which every human being brought a stone.”―Ralph Waldo Emerson',
             max_width_chars: 50
         })
         label.set_line_wrap(true)
@@ -424,7 +424,7 @@ class AppWindow {
             })
             title.get_style_context().add_class('dim-label')
             const label =  new Gtk.Label({
-                label: '“ Impossible is a word to be found only in the dictionary of fools.”―Napoléon Bonaparte',
+                label: '“Impossible is a word to be found only in the dictionary of fools.”―Napoléon Bonaparte',
                 max_width_chars: 50
             })
             label.set_line_wrap(true)
