@@ -1,3 +1,5 @@
+<img src="com.github.johnfactotum.QuickLookup.svg" align="left">
+
 # Quick Lookup
 
 Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](https://en.wiktionary.org/)™.
@@ -45,6 +47,8 @@ gjs quick-lookup.js
 ```
 
 ### Flatpak
+
+<a href="https://flathub.org/apps/details/com.github.johnfactotum.QuickLookup"><img height="50" alt="Download on Flathub" src="https://flathub.org/assets/badges/flathub-badge-en.png"></a>
 
 #### Building Flatpaks manually
 
