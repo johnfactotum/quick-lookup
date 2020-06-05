@@ -25,6 +25,15 @@
         </screenshot>
     </screenshots>
     <releases>
+        <release version="1.1.0" date="2019-06-05">
+            <description>
+                <p>Changes:</p>
+                <ul>
+                    <li>Remember language setting</li>
+                    <li>Fixed WebKitWebProcess not killed after lookup</li>
+                </ul>
+            </description>
+        </release>
         <release version="1.0.0" date="2019-06-02">
             <description>
                 <p>Initial release</p>
