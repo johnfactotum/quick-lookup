@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="com.github.johnfactotum.QuickLookup" path="/com/github/johnfactotum/QuickLookup/">
+        <key name="language" type="s">
+            <default>'English'</default>
+            <summary>Language</summary>
+            <description>Language name or ISO 639-1 code</description>
+        </key>
+    </schema>
+</schemalist>

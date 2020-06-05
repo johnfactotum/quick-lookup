@@ -18,6 +18,15 @@ imports.gi.versions.Gtk = '3.0'
 const { GLib, Gio, Gtk } = imports.gi
 const Webkit = imports.gi.WebKit2
 
+const pkg = {
+    name: 'com.github.johnfactotum.QuickLookup'
+}
+
+let settings
+try {
+    settings = new Gio.Settings({ schema_id: pkg.name })
+} catch(e) {}
+
 const baseURL = 'https://en.wiktionary.org/'
 const baseWikiRegExp = new RegExp('^https://en.wiktionary.org/wiki/')
 const apiURL = 'https://en.wiktionary.org/api/rest_v1/page/definition/'
@@ -192,6 +201,11 @@ class AppWindow {
         completion.set_text_column(0)
         completion.set_model(langCombo.get_model())
         langEntry.set_completion(completion)
+        
+        if (settings) {
+            const flag = Gio.SettingsBindFlags.DEFAULT
+            settings.bind('language', langEntry, 'text', flag)
+        }
 
         const lookup = () => {
             if (this._currentPage) this._pushHistory(this._currentPage)
