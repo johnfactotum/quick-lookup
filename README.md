@@ -20,25 +20,9 @@ Dependencies:
 - `gjs (>= 1.52)`
 - `webkit2gtk`
 
-To install, run
+To install, run `sudo ./install.sh`
 
-```bash
-sudo install -D quick-lookup.js /usr/bin/quick-lookup
-sudo install com.github.johnfactotum.QuickLookup.desktop /usr/share/applications
-sudo install com.github.johnfactotum.QuickLookup.svg /usr/share/icons/hicolor/scalable/apps
-sudo install com.github.johnfactotum.QuickLookup-symbolic.svg /usr/share/icons/hicolor/symbolic/apps
-sudo gtk-update-icon-cache -qtf /usr/share/icons/hicolor
-sudo update-desktop-database -q /usr/share/applications
-```
-
-To uninstall, run
-
-```bash
-sudo rm /usr/bin/quick-lookup
-sudo rm /usr/share/applications/com.github.johnfactotum.QuickLookup.desktop
-sudo rm /usr/share/icons/hicolor/scalable/apps/com.github.johnfactotum.QuickLookup.svg
-sudo rm /usr/share/icons/hicolor/symbolic/apps/com.github.johnfactotum.QuickLookup-symbolic.svg
-```
+To uninstall, run `sudo ./uninstall.sh`
 
 ### Run without installing
 
