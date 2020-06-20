@@ -15,12 +15,15 @@
  */
 
 imports.gi.versions.Gtk = '3.0'
-const { GLib, Gio, Gtk } = imports.gi
+const { GLib, Gio, Gtk, Gdk } = imports.gi
 const Webkit = imports.gi.WebKit2
+const System = imports.system
 
 const pkg = {
     name: 'com.github.johnfactotum.QuickLookup'
 }
+
+let lookupSelection = false
 
 let settings
 try {
@@ -172,12 +175,28 @@ class AppWindow {
         this._history.push(x)
         this._backButton.sensitive = true
     }
+    _onFocusIn() {
+        if (!lookupSelection) return
+        const display = Gdk.Display.get_default()
+        const atom = Gdk.Atom.intern('PRIMARY', true)
+        const clipboardText = Gtk.Clipboard.get_for_display(display, atom)
+            .wait_for_text()
+        const text = clipboardText ? clipboardText.trim() :  ''
+        const entry = this._queryEntry
+        if (text && text !== entry.text) {
+            entry.text = text
+            entry.activate()
+            entry.grab_focus_without_selecting()
+        }
+    }
     _buildUI() {
         const window = new Gtk.ApplicationWindow({
             application: this._app,
             defaultHeight: 450,
             defaultWidth: 500,
         })
+        window.connect('focus-in-event', () => this._onFocusIn())
+
         const headerBar = new Gtk.HeaderBar({ show_close_button: true })
         window.set_titlebar(headerBar)
         window.title = 'Quick Lookup'
@@ -249,6 +268,7 @@ class AppWindow {
         this._content = content
         window.add(this._content)
 
+        langEntry.grab_focus_without_selecting()
         window.show_all()
 
         this._window = window
@@ -474,9 +494,20 @@ const application = new Gtk.Application({
     flags: Gio.ApplicationFlags.FLAGS_NONE
 })
 
+application.add_main_option('selection',
+    0, GLib.OptionFlags.NONE, GLib.OptionArg.NONE,
+    'Look up primary selection text', null)
+
 application.connect('activate', app => {
     const activeWindow = app.activeWindow || new AppWindow(app).getWidget()
     activeWindow.present()
 })
 
-application.run(null)
+application.connect('handle-local-options', (application, options) => {
+    if (options.contains('selection')) lookupSelection = true
+    return -1
+})
+
+// see https://stackoverflow.com/a/35237684
+ARGV.unshift(System.programInvocationName)
+application.run(ARGV)
