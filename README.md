@@ -12,6 +12,7 @@ Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](http
 - Choose language by entering language name or ISO-639-1 code (e.g., "English" or "en")
 - Open internal links within the app
 - Go back to previous page with the back button
+- Look up selected text from any app by setting a keyboard shortcut to launch this app with the `--selection` command line option
 
 ## Installation
 

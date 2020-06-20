@@ -13,6 +13,7 @@
             <li>Choose language by entering language name or ISO-639-1 code</li>
             <li>Open internal links within the app</li>
             <li>Go back to previous page with the back button</li>
+            <li>Look up selected text from any app by setting a keyboard shortcut to launch this app with the “--selection” command line option</li>
         </ul>
         <p>Wiktionary is a trademark of the Wikimedia Foundation. This program is not endorsed by or affiliated with the Wikimedia Foundation.</p>
     </description>
@@ -25,6 +26,11 @@
         </screenshot>
     </screenshots>
     <releases>
+        <release version="1.2.0" date="2020-06-20">
+            <description>
+                <p>Added new “--selection” command line option. When launched in this mode, it will look up the recently selected text when switching to the window. Binding the command to a global shortcut will allow you to look up words from any app by pressing the shortcut.</p>
+            </description>
+        </release>
         <release version="1.1.0" date="2020-06-05">
             <description>
                 <p>Changes:</p>
