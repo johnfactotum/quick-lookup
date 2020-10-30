@@ -50,7 +50,9 @@ flatpak-builder --force-clean --install --user build com.github.johnfactotum.Qui
 
 ### Why does it only support English Wiktionary?
 
-The Wiktionary API is only available for English. Explanation from [MediaWiki](https://www.mediawiki.org/wiki/Wikimedia_Apps/Wiktionary_definition_popups_in_the_Android_Wikipedia_app):
+This app only supports the [English version](https://en.wiktionary.org/) of [Wiktionary](https://www.wiktionary.org/). This means that you can lookup all words of all languages and find their definitions and descriptions in English.
+
+This is because Wiktionary's definition API is currently only available for English. Explanation from [MediaWiki](https://www.mediawiki.org/wiki/Wikimedia_Apps/Wiktionary_definition_popups_in_the_Android_Wikipedia_app):
 
 > Wiktionary content is unstructured, and presenting a concise set of definitions requires parsing them from the page HTML. English Wiktionary has an entry layout guide which assisted in this for the current English-only implementation. 
 
