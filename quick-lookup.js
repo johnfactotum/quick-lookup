@@ -23,7 +23,7 @@ const pkg = {
     name: 'com.github.johnfactotum.QuickLookup'
 }
 
-let lookupSelection = false
+let lookupSelection = true
 
 let settings
 try {
@@ -131,7 +131,7 @@ const lookup = (script, againScript) => new Promise((resolve, reject) => {
     webView.load_html(lookupHtml, null)
 
     const contentManager = webView.get_user_content_manager()
-    contentManager.connect('script-message-received::action', (_, jsResult) => {
+    contentManager.connect('script-message-received::action', (_, jsResult) => {slimbook
         const data = jsResult.get_js_value().to_string()
         const { type, payload } = JSON.parse(data)
         switch (type) {
