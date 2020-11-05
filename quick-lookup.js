@@ -234,8 +234,8 @@ class AppWindow {
         queryEntry.connect('activate', lookup)
 
         const box = new Gtk.Box({ spacing: 6 })
-        box.pack_start(langCombo, false, true, 0)
         box.pack_start(queryEntry, true, true, 0)
+        box.pack_start(langCombo, false, true, 0)
         headerBar.custom_title = box
 
         this._backButton = new Gtk.Button({
@@ -267,8 +267,6 @@ class AppWindow {
         content.pack_start(label, false, true, 0)
         this._content = content
         window.add(this._content)
-
-        langEntry.grab_focus_without_selecting()
         window.show_all()
 
         this._window = window
