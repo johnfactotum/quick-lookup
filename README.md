@@ -25,6 +25,8 @@ To install, run `sudo ./install.sh`
 
 To uninstall, run `sudo ./uninstall.sh`
 
+An [AUR package](https://aur.archlinux.org/packages/quick-lookup/) is available for Arch Linux and derivatives.
+
 ### Run without installing
 
 ```bash
