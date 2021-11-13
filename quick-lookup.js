@@ -489,8 +489,6 @@ const makeApplicationWindow = application => {
     win.set_help_overlay($('shortcuts-window'))
     const menuButton = $('primary-menu-button')
 
-    const eventController = new Gtk.EventControllerFocus()
-    win.add_controller(eventController)
     win.connect('notify::is-active', () => {
         if (!lookupSelection || !win.is_active) return
         const display = Gdk.Display.get_default()
