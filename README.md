@@ -18,8 +18,10 @@ Quick Lookup is a simple GTK dictionary application powered by [Wiktionary](http
 
 Dependencies:
 
-- `gjs (>= 1.52)`
-- `webkit2gtk`
+- `gjs (>= 1.70)`
+- `gtk4`
+- `libadwaita`
+- `webkit2gtk4`/`webkit2gtk-5.0`
 
 To install, run `sudo ./install.sh`
 

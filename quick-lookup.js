@@ -14,13 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-imports.gi.versions.Gtk = '3.0'
-const { GLib, Gio, Gtk, Gdk } = imports.gi
-const Webkit = imports.gi.WebKit2
+imports.gi.versions.Gio = '2.0'
+imports.gi.versions.Gtk = '4.0'
+imports.gi.versions.WebKit2 = '5.0'
+imports.gi.versions.Adw = '1'
+const { GLib, Gio, Gtk, Gdk, WebKit2, Adw } = imports.gi
 const System = imports.system
 
 const pkg = {
-    name: 'com.github.johnfactotum.QuickLookup'
+    name: 'com.github.johnfactotum.QuickLookup',
+    version: '2.0.0',
 }
 
 let lookupSelection = false
@@ -39,7 +42,7 @@ const wikiNamespaces = [
     'Media', 'Special', 'Talk', 'User', 'Wiktionary', 'File', 'MediaWiki',
     'Template', 'Help', 'Category',
     'Summary', 'Appendix', 'Concordance', 'Index', 'Rhymes', 'Transwiki',
-    'Thesaurus', 'Citations', 'Sign'
+    'Thesaurus', 'Citations', 'Sign',
 ]
 
 // by no means a complete list; no particular order or criteria
@@ -51,16 +54,57 @@ const suggestedLangs = [
     'Armenian', 'Georgian', 'Albanian', 'Lithuanian', 'Welsh', 'Zulu',
     'Chinese', 'Japanese', 'Korean', 'Vietnamese', 'Thai', 'Tagalog',
     'Arabic', 'Persian', 'Turkish', 'Hindi', 'Urdu', 'Indonesian',
-    'Latin', 'Ancient Greek', 'Sanskrit', 'Hebrew', 'Esperanto'
+    'Latin', 'Ancient Greek', 'Sanskrit', 'Hebrew', 'Esperanto',
 ].sort()
 
-const lookupHtml = `<script>
-const dispatch = action => {
-    const obj = { time: new Date().getTime(), ...action }
-    window.webkit.messageHandlers.action.postMessage(JSON.stringify(obj))
+const scriptRunner = webView => {
+    const promises = new Map()
+    const makePromise = token => new Promise((resolve, reject) => promises.set(token, {
+        resolve: value => (resolve(value), promises.delete(token)),
+        reject: value => (reject(value), promises.delete(token)),
+    }))
+
+    const handler = ({ token, ok, payload }) => {
+        const promise = promises.get(token)
+        if (ok) promise.resolve(payload)
+        else promise.reject(payload)
+    }
+    const manager = webView.get_user_content_manager()
+    manager.connect(`script-message-received::handler`, (_, result) => {
+        try { handler(JSON.parse(result.get_js_value().to_string())) }
+        catch (e) { log(e) }
+    })
+    const success = manager.register_script_message_handler('handler')
+    if (!success) throw new Error('failed to register message handler')
+
+    const exec = (func, params) => {
+        const token = Math.random().toString()
+        const paramsStr = typeof params === 'undefined' ? '' : JSON.stringify(params)
+        const exp = paramsStr ? `JSON.parse(decodeURI("${encodeURI(paramsStr)}"))` : ''
+        const script = `(async () => await ${func}(${exp}))()
+            .then(x => globalThis.webkit.messageHandlers.handler.postMessage(
+                JSON.stringify({ token: "${token}", ok: true, payload: x })))
+            .catch(e => globalThis.webkit.messageHandlers.handler.postMessage(
+                JSON.stringify({ token: "${token}", ok: false, payload: e.message })))`
+        const promise = makePromise(token)
+        webView.run_javascript(script, null, () => {})
+        return promise
+    }
+    const eval = exp => new Promise((resolve, reject) =>
+        webView.run_javascript(`JSON.stringify(${exp})`, null, (_, result) => {
+            try {
+                const jsResult = webView.run_javascript_finish(result)
+                const str = jsResult.get_js_value().to_string()
+                const value = str !== 'undefined' ? JSON.parse(str) : null
+                resolve(value)
+            } catch (e) {
+                reject(e)
+            }
+        }))
+    return { exec, eval }
 }
 
-// from https://stackoverflow.com/a/11892228
+const script = `(() => {
 const usurp = p => {
     let last = p
     for (let i = p.childNodes.length - 1; i >= 0; i--) {
@@ -70,7 +114,6 @@ const usurp = p => {
     }
     p.parentNode.removeChild(p)
 }
-
 const pangoMarkupTags = ['a', 'b', 'big', 'i', 's', 'sub', 'sup', 'small', 'tt', 'u']
 const toPangoMarkup = (html, baseURL = '') => {
     const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -90,13 +133,12 @@ const toPangoMarkup = (html, baseURL = '') => {
 }
 
 const baseURL = '${baseURL}'
-const wiktionary = (word, language = 'en') => fetch('${apiURL}' + word)
+const wiktionary = ({ word, language }) => fetch('${apiURL}' + word)
     .then(res => res.ok ? res.json() : Promise.reject(new Error()))
     .then(json => {
         const results = language.length === 2
             ? json[language]
             : Object.values(json).find(x => x[0].language === language)
-
         results.forEach(el => {
             el.definitions.forEach(x => {
                 x.definition = toPangoMarkup(x.definition, baseURL)
@@ -106,406 +148,469 @@ const wiktionary = (word, language = 'en') => fetch('${apiURL}' + word)
         })
         return { word: decodeURIComponent(word), results }
     })
-    .then(payload => dispatch({ type: 'lookup-results', payload }))
     .catch(e => {
-        console.error(e)
-        word = decodeURI(word)
         const lower = word.toLowerCase()
-        if (lower !== word) dispatch({ type: 'lookup-again', payload: lower })
-        else dispatch({ type: 'lookup-error' })
+        if (lower !== word) return wiktionary({ word: lower, language })
+        else throw new Error('no definitions found')
     })
 
-dispatch({ type: 'can-lookup' })
-</script>
-`
+globalThis.wiktionary = wiktionary
+})()`
 
-const lookup = (script, againScript) => new Promise((resolve, reject) => {
-    const webView = new Webkit.WebView({
-        settings: new Webkit.Settings({
-            enable_write_console_messages_to_stdout: true,
-            allow_universal_access_from_file_urls: true
-        })
-    })
-    const runScript = script => webView.run_javascript(script, null, () => {})
-
-    webView.load_html(lookupHtml, null)
-
-    const contentManager = webView.get_user_content_manager()
-    contentManager.connect('script-message-received::action', (_, jsResult) => {
-        const data = jsResult.get_js_value().to_string()
-        const { type, payload } = JSON.parse(data)
-        switch (type) {
-            case 'can-lookup': runScript(script); break
-            case 'lookup-again': runScript(againScript(payload)); break
-            case 'lookup-results':
-                resolve(payload)
-                webView.destroy()
-                break
-            case 'lookup-error':
-                reject()
-                webView.destroy()
-                break
-        }
-    })
-    contentManager.register_script_message_handler('action')
+const webView = new WebKit2.WebView({
+    settings: new WebKit2.Settings({
+        enable_javascript_markup: false,
+        enable_write_console_messages_to_stdout: true,
+        allow_universal_access_from_file_urls: true,
+        allow_file_access_from_file_urls: false,
+        enable_fullscreen: false,
+        enable_hyperlink_auditing: false,
+    }),
 })
+const { eval, exec } = scriptRunner(webView)
+const lookup = async (word, language) => {
+    await eval(script)
+    return await exec('wiktionary', { word, language })
+}
 
-const wiktionary = (word, language) =>
-    lookup(`wiktionary("${encodeURIComponent(word)}", '${language}')`,
-        payload => `wiktionary("${encodeURIComponent(payload)}", '${language}')`)
+const buildDefinition = handleLink => ({ definition, examples }, i) => {
+    const label = new Gtk.Label({
+        label: `${i + 1}`,
+        valign: Gtk.Align.START,
+        halign: Gtk.Align.END,
+    })
+    label.get_style_context().add_class('dim-label')
 
-class AppWindow {
-    constructor(app) {
-        this._app = app
-        this._history = []
-        this._currentPage = null
-    }
-    _addShortcut(accels, name, func) {
-        const action = new Gio.SimpleAction({ name })
-        action.connect('activate', func)
-        this._window.add_action(action)
-        this._app.set_accels_for_action(`win.${name}`, accels)
-    }
-    _goBack() {
-        if (!this._history.length) return
-        this._lookup(...this._history.pop())
-        if (!this._history.length) this._backButton.sensitive = false
-    }
-    _pushHistory(x) {
-        this._history.push(x)
-        this._backButton.sensitive = true
-    }
-    _onFocusIn() {
-        if (!lookupSelection) return
-        const display = Gdk.Display.get_default()
-        const atom = Gdk.Atom.intern('PRIMARY', true)
-        const clipboardText = Gtk.Clipboard.get_for_display(display, atom)
-            .wait_for_text()
-        const text = clipboardText ? clipboardText.trim() :  ''
-        const entry = this._queryEntry
-        if (text && text !== entry.text) {
-            entry.text = text
-            entry.activate()
-            entry.grab_focus_without_selecting()
-        }
-    }
-    _buildUI() {
-        const window = new Gtk.ApplicationWindow({
-            application: this._app,
-            defaultHeight: 450,
-            defaultWidth: 500,
+    const value = new Gtk.Label({
+        label: definition,
+        valign: Gtk.Align.START,
+        halign: Gtk.Align.START,
+        hexpand: true,
+        xalign: 0,
+        use_markup: true,
+        selectable: true,
+        wrap: true,
+    })
+    value.connect('activate-link', handleLink)
+
+    if (examples) {
+        const exampleBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 3,
+            margin_start: 18,
+            margin_top: 6,
+            margin_bottom: 6,
         })
-        window.connect('focus-in-event', () => this._onFocusIn())
-
-        const headerBar = new Gtk.HeaderBar({ show_close_button: true })
-        window.set_titlebar(headerBar)
-        window.title = 'Quick Lookup'
-
-        const queryEntry = new Gtk.SearchEntry({
-            placeholder_text: 'Word or phrase',
-            tooltip_text: 'Word or phrase to look up'
-        })
-        const langCombo = Gtk.ComboBoxText.new_with_entry()
-        langCombo.wrap_width = 3
-        suggestedLangs.forEach(text => langCombo.append_text(text))
-
-        const langEntry = langCombo.get_child()
-        langEntry.placeholder_text = 'Language'
-        langEntry.tooltip_text = 'Language name or ISO 639-1 code'
-        langEntry.width_chars = 10
-        langEntry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY,
-            'preferences-desktop-locale-symbolic')
-        langEntry.set_icon_sensitive(Gtk.EntryIconPosition.PRIMARY, false)
-        const completion = new Gtk.EntryCompletion()
-        completion.set_text_column(0)
-        completion.set_model(langCombo.get_model())
-        langEntry.set_completion(completion)
-        
-        if (settings) {
-            const flag = Gio.SettingsBindFlags.DEFAULT
-            settings.bind('language', langEntry, 'text', flag)
-        }
-
-        const lookup = () => {
-            if (this._currentPage) this._pushHistory(this._currentPage)
-            this._lookup(this._queryEntry.text, this._langEntry.text)
-        }
-        langEntry.connect('activate', lookup)
-        queryEntry.connect('activate', lookup)
-
-        const box = new Gtk.Box({ spacing: 6 })
-        box.pack_start(queryEntry, true, true, 0)
-        box.pack_start(langCombo, false, true, 0)
-        headerBar.custom_title = box
-
-        this._backButton = new Gtk.Button({
-            image: new Gtk.Image({ icon_name: 'go-previous-symbolic' }),
-            tooltip_text: 'Go back',
-            sensitive: false
-        })
-        this._backButton.connect('clicked', () => this._goBack())
-        headerBar.pack_start(this._backButton)
-
-        const content = new Gtk.Box({
-            valign: Gtk.Align.CENTER,
-            halign: Gtk.Align.CENTER,
-            spacing: 18,
-            border_width: 18,
-            orientation: Gtk.Orientation.VERTICAL
-        })
-        const image = new Gtk.Image({
-            icon_name: 'accessories-dictionary-symbolic', pixel_size: 64
-        })
-        image.get_style_context().add_class('dim-label')
-        const label =  new Gtk.Label({
-            label: '“Language is a city to the building of which every human being brought a stone.”―Ralph Waldo Emerson',
-            max_width_chars: 50
-        })
-        label.set_line_wrap(true)
-        label.get_style_context().add_class('dim-label')
-        content.pack_start(image, false, true, 0)
-        content.pack_start(label, false, true, 0)
-        this._content = content
-        window.add(this._content)
-        window.show_all()
-
-        this._window = window
-        this._queryEntry = queryEntry
-        this._langEntry = langEntry
-
-        this._addShortcut(['<Control>w', '<Control>q'],
-            'close', () => this._window.close())
-        this._addShortcut(['<Alt>Left'],
-            'go-back', () => this._goBack())
-        this._addShortcut(['<Control>f', 'F6'],
-            'query-entry', () => this._queryEntry.grab_focus())
-        this._addShortcut(['<Control>l'],
-            'lang-entry', () => this._langEntry.grab_focus())
-    }
-    _lookup(query, language) {
-        this._currentPage = [query, language]
-
-        const box = new Gtk.Box({ border_width: 18 })
-        const spinner = new Gtk.Spinner({
-            valign: Gtk.Align.CENTER,
-            halign: Gtk.Align.CENTER,
-            width_request: 48,
-            height_request: 48
-        })
-        spinner.start()
-        box.pack_start(spinner, true, true, 0)
-
-        this._window.remove(this._content)
-        this._content = box
-        this._window.add(this._content)
-        this._content.show_all()
-
-        const handleLink = (_, uri) => {
-            const internalLink = uri.split(baseWikiRegExp)[1]
-            if (internalLink && wikiNamespaces.every(namespace =>
-                !internalLink.startsWith(namespace + ':')
-                && !internalLink.startsWith(namespace + '_talk:'))) {
-                this._pushHistory([query, language])
-                const [title, lang] = internalLink.split('#')
-                const word = decodeURIComponent(title)
-                    .replace(/_/g, ' ')
-                this._lookup(word, lang || 'en')
-                return true
-            }
-        }
-
-        wiktionary(query, language).then(({ word, results }) => {
-            const displayWord = word.replace(/_/g, ' ')
-            const displayLanguage = results[0].language
-            const linkLanguage = displayLanguage.replace(/ /g, '_')
-
-            const grid = new Gtk.Grid({
-                column_spacing: 6, row_spacing: 6,
-                border_width: 18,
-                valign: Gtk.Align.START
-            })
-            let row = 0
-
-            const langLabel = new Gtk.Label({
-                label: `<small>${displayLanguage}</small>`,
-                xalign: 0,
-                use_markup: true
-            })
-            langLabel.get_style_context().add_class('dim-label')
-            grid.attach(langLabel, 1, row, 1, 1)
-            row++
-
-            const title = new Gtk.Label({
-                label: '<span size="x-large" weight="bold">'
-                    + GLib.markup_escape_text(displayWord, -1)
-                    + '</span>',
+        examples.forEach(example => {
+            const exampleLabel = new Gtk.Label({
+                label: example,
+                valign: Gtk.Align.START,
+                halign: Gtk.Align.START,
+                hexpand: true,
                 xalign: 0,
                 use_markup: true,
-                selectable: true
+                selectable: true,
+                wrap: true,
             })
-            grid.attach(title, 1, row, 1, 1)
-            title.set_line_wrap(true)
-            row++
-
-            results.forEach(({ partOfSpeech, definitions }, i) => {
-                if (i > 0) {
-                    grid.attach(new Gtk.Label(), 1, row, 1, 1)
-                    row++
-                }
-
-                const partOfSpeechBox = new Gtk.Box({ spacing: 6 })
-                const partOfSpeechLabel = new Gtk.Label({
-                    label: `<i>${partOfSpeech}</i>`,
-                    xalign: 0,
-                    use_markup: true
-                })
-                partOfSpeechLabel.get_style_context().add_class('dim-label')
-                partOfSpeechBox.pack_start(partOfSpeechLabel, false, true, 0)
-                partOfSpeechBox.pack_start(new Gtk.Separator({
-                    valign: Gtk.Align.CENTER
-                }), true, true, 0)
-                grid.attach(new Gtk.Separator({
-                    valign: Gtk.Align.CENTER
-                }), 0, row, 1, 1)
-                grid.attach(partOfSpeechBox, 1, row, 1, 1)
-                row++
-
-                definitions.forEach(({ definition, examples }, i) => {
-                    const label = new Gtk.Label({
-                        label: i + 1 + '.',
-                        valign: Gtk.Align.START,
-                        halign: Gtk.Align.END
-                    })
-                    label.get_style_context().add_class('dim-label')
-                    grid.attach(label, 0, row, 1, 1)
-
-                    const value = new Gtk.Label({
-                        label: definition,
-                        valign: Gtk.Align.START,
-                        halign: Gtk.Align.START,
-                        hexpand: true,
-                        xalign: 0,
-                        use_markup: true,
-                        selectable: true
-                    })
-                    value.set_line_wrap(true)
-                    value.connect('activate-link', handleLink)
-                    grid.attach(value, 1, row, 1, 1)
-                    row++
-
-                    if (examples) {
-                        const exampleBox = new Gtk.Box({
-                            orientation: Gtk.Orientation.VERTICAL,
-                            spacing: 3,
-                            margin_start: 18,
-                            margin_top: 6,
-                            margin_bottom: 6
-                        })
-                        examples.forEach(example => {
-                            const exampleLabel = new Gtk.Label({
-                                label: `<small>${
-                                    example
-                                }</small>`,
-                                valign: Gtk.Align.START,
-                                halign: Gtk.Align.START,
-                                hexpand: true,
-                                xalign: 0,
-                                use_markup: true,
-                                selectable: true
-                            })
-                            exampleLabel.set_line_wrap(true)
-                            exampleLabel.connect('activate-link', handleLink)
-                            exampleLabel.get_style_context()
-                                .add_class('dim-label')
-                            exampleBox.pack_start(exampleLabel, false, true, 0)
-                        })
-                        grid.attach(exampleBox, 1, row, 1, 1)
-                        row++
-                    }
-                })
-            })
-
-            const sourceLabel = new Gtk.Label({
-                label: `<small>Source: <a href="${baseURL}wiki/${
-                    GLib.markup_escape_text(word, -1)
-                }#${linkLanguage}">Wiktionary</a></small>`,
-                xalign: 1,
-                use_markup: true
-            })
-            sourceLabel.get_style_context().add_class('dim-label')
-            const sourceBox = new Gtk.Box({ border_width: 18 })
-            sourceBox.pack_end(sourceLabel, false, true, 0)
-
-            const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL })
-            box.pack_start(grid, true, true, 0)
-            box.pack_end(sourceBox, false, true, 0)
-
-            const scroll = new Gtk.ScrolledWindow()
-            scroll.add(box)
-
-            this._window.remove(this._content)
-            this._content = scroll
-            this._window.add(this._content)
-            this._content.show_all()
-        }).catch(e => {
-            print(e)
-            const box = new Gtk.Box({
-                valign: Gtk.Align.CENTER,
-                halign: Gtk.Align.CENTER,
-                spacing: 18,
-                border_width: 18,
-                orientation: Gtk.Orientation.VERTICAL
-            })
-            const title =  new Gtk.Label({
-                label: '<span size="x-large" weight="bold">No definitions found</span>',
-                use_markup: true
-            })
-            title.get_style_context().add_class('dim-label')
-            const label =  new Gtk.Label({
-                label: '“Impossible is a word to be found only in the dictionary of fools.”―Napoléon Bonaparte',
-                max_width_chars: 50
-            })
-            label.set_line_wrap(true)
-            label.get_style_context().add_class('dim-label')
-            const image = new Gtk.Image({
-                icon_name: 'face-uncertain-symbolic', pixel_size: 64
-            })
-            image.get_style_context().add_class('dim-label')
-            box.pack_start(image, false, true, 0)
-            box.pack_start(title, false, true, 0)
-            box.pack_start(label, false, true, 0)
-
-            this._window.remove(this._content)
-            this._content = box
-            this._window.add(this._content)
-            this._content.show_all()
+            exampleLabel.connect('activate-link', handleLink)
+            const ctx = exampleLabel.get_style_context()
+            ctx.add_class('dim-label')
+            ctx.add_class('caption')
+            exampleBox.append(exampleLabel)
         })
-    }
-    getWidget() {
-        this._buildUI()
-        return this._window
+        return [[label, value], [null, exampleBox]]
+    } else return [[label, value]]
+}
+
+const buildPartsOfSpeech = handleLink => ({ partOfSpeech, definitions }, i) => {
+    const partOfSpeechBox = new Gtk.Box({ spacing: 6 })
+    const partOfSpeechLabel = new Gtk.Label({
+        label: `<i>${partOfSpeech}</i>`,
+        xalign: 0,
+        use_markup: true,
+    })
+    partOfSpeechLabel.get_style_context().add_class('dim-label')
+    partOfSpeechBox.append(partOfSpeechLabel)
+    partOfSpeechBox.append(new Gtk.Separator({ valign: Gtk.Align.CENTER, hexpand: true }))
+
+    return (i > 0 ? [[new Gtk.Label()]] : [])
+        .concat([[new Gtk.Separator({ valign: Gtk.Align.CENTER }), partOfSpeechBox]])
+        .concat(definitions.map(buildDefinition(handleLink)).flat())
+}
+
+const buildResultsPage = ({ word, results }, handleLink) => {
+    const displayWord = word.replace(/_/g, ' ')
+    const displayLanguage = results[0].language
+    const linkLanguage = displayLanguage.replace(/ /g, '_')
+
+    const grid = new Gtk.Grid({
+        column_spacing: 6,
+        row_spacing: 6,
+        margin_start: 18,
+        margin_end: 18,
+        margin_top: 18,
+        margin_bottom: 18,
+    })
+    const scroll = new Gtk.ScrolledWindow()
+    scroll.set_child(grid)
+
+    const langLabel = new Gtk.Label({
+        label: displayLanguage,
+        xalign: 0,
+    })
+    const ctx = langLabel.get_style_context()
+    ctx.add_class('dim-label')
+    ctx.add_class('caption')
+
+    const title = new Gtk.Label({
+        label: GLib.markup_escape_text(displayWord, -1),
+        xalign: 0,
+        use_markup: true,
+        selectable: true,
+        wrap: true,
+    })
+    title.get_style_context().add_class('title-1')
+
+     const sourceLabel = new Gtk.Label({
+        label: `<small>Source: <a href="${baseURL}wiki/${
+            GLib.markup_escape_text(word, -1)
+        }#${linkLanguage}">Wiktionary</a></small>`,
+        xalign: 1,
+        use_markup: true,
+        margin_top: 18,
+    })
+    sourceLabel.get_style_context().add_class('dim-label')
+
+    ;[[null, langLabel], [null, title]]
+        .concat(results.map(buildPartsOfSpeech(handleLink)).flat())
+        .concat([[null, sourceLabel]])
+        .map(([a, b], i) => {
+            if (a) grid.attach(a, 0, i, 1, 1)
+            if (b) grid.attach(b, 1, i, 1, 1)
+        })
+
+    return scroll
+}
+
+const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
+<object class="AdwApplicationWindow" id="application-window">
+  <property name="default-height">540</property>
+  <property name="default-width">480</property>
+  <property name="title">Quick Lookup</property>
+  <property name="content">
+    <object class="GtkBox">
+      <property name="orientation">vertical</property>
+      <child>
+        <object class="AdwHeaderBar">
+          <property name="title-widget">
+            <object class="GtkSearchEntry" id="query-entry">
+              <property name="placeholder-text">Word or phrase</property>
+              <property name="tooltip-text">Word or phrase to look up</property>
+            </object>
+          </property>
+          <child type="start">
+            <object class="GtkButton">
+              <property name="icon-name">go-previous-symbolic</property>
+              <property name="tooltip-text">Go back</property>
+              <property name="action-name">win.go-back</property>
+            </object>
+          </child>
+          <child type="end">
+            <object class="GtkMenuButton" id="primary-menu-button">
+              <property name="icon-name">open-menu-symbolic</property>
+              <property name="popover">
+                <object class="GtkPopoverMenu" id="primary-menu-popover">
+                  <property name="menu-model">primary-menu</property>
+                </object>
+              </property>
+            </object>
+          </child>
+        </object>
+      </child>
+      <child>
+        <object class="GtkScrolledWindow">
+          <property name="vexpand">true</property>
+          <child>
+            <object class="GtkStack" id="stack">
+              <child>
+                <object class="GtkStackPage">
+                  <property name="name">init</property>
+                  <property name="child">
+                    <object class="AdwStatusPage">
+                      <property name="icon-name">accessories-dictionary-symbolic</property>
+                      <property name="description">“Language is a city to the building of which every human being brought a stone.”\n―Ralph Waldo Emerson</property>
+                    </object>
+                  </property>
+                </object>
+              </child>
+              <child>
+                <object class="GtkStackPage">
+                  <property name="name">loading</property>
+                  <property name="child">
+                    <object class="GtkSpinner">
+                      <property name="valign">center</property>
+                      <property name="width-request">64</property>
+                      <property name="height-request">64</property>
+                      <property name="spinning">true</property>
+                    </object>
+                  </property>
+                </object>
+              </child>
+              <child>
+                <object class="GtkStackPage">
+                  <property name="name">error</property>
+                  <property name="child">
+                    <object class="AdwStatusPage">
+                      <property name="icon-name">face-uncertain-symbolic</property>
+                      <property name="title">No definitions found</property>
+                      <property name="description">“Impossible is a word to be found only in the dictionary of fools.”\n―Napoléon Bonaparte</property>
+                    </object>
+                  </property>
+                </object>
+              </child>
+            </object>
+          </child>
+        </object>
+      </child>
+      <child>
+        <object class="GtkActionBar">
+          <child type="center">
+            <object class="GtkComboBoxText" id="lang-combo">
+              <property name="hexpand">true</property>
+              <property name="has-entry">true</property>
+              <property name="has-frame">false</property>
+            </object>
+          </child>
+        </object>
+      </child>
+    </object>
+  </property>
+</object>
+<menu id="primary-menu">
+  <section>
+    <item>
+      <attribute name="label">_Keyboard Shortcuts</attribute>
+      <attribute name="action">win.show-help-overlay</attribute>
+    </item>
+    <item>
+      <attribute name="label">_About Quick Lookup</attribute>
+      <attribute name="action">app.about</attribute>
+    </item>
+  </section>
+</menu>
+<object class="GtkShortcutsWindow" id="shortcuts-window">
+    <property name="modal">True</property>
+    <child>
+      <object class="GtkShortcutsSection">
+        <child>
+          <object class="GtkShortcutsGroup">
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Go back</property>
+                <property name="action-name">win.go-back</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Focus on word entry</property>
+                <property name="action-name">win.query-entry</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Focus on language entry</property>
+                <property name="action-name">win.lang-entry</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Menu</property>
+                <property name="action-name">win.menu</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Close</property>
+                <property name="action-name">win.close</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="visible">True</property>
+                <property name="title">Quit</property>
+                <property name="action-name">app.quit</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+</object>
+</interface>`
+
+const about = application => () => {
+    const aboutDialog = new Gtk.AboutDialog({
+        authors: ['John Factotum'],
+        program_name: 'Quick Lookup',
+        comments: 'Look up words quickly',
+        logo_icon_name: pkg.name,
+        version: pkg.version,
+        license_type: Gtk.License.GPL_3_0,
+        website: 'https://github.com/johnfactotum/quick-lookup',
+        modal: true,
+        transient_for: application.active_window
+    })
+    aboutDialog.present()
+}
+
+const addAction = window => {
+    const { application } = window
+    return ([fullName, accels, func]) => {
+        const [scope, name] = fullName.split('.')
+        const action = new Gio.SimpleAction({ name })
+        action.connect('activate', func)
+        if (scope === 'app') application.add_action(action)
+        else window.add_action(action)
+        application.set_accels_for_action(`${scope}.${name}`, accels)
     }
 }
 
-const application = new Gtk.Application({
-    application_id: 'com.github.johnfactotum.QuickLookup',
-    flags: Gio.ApplicationFlags.FLAGS_NONE
+const makeApplicationWindow = application => {
+    const builder = Gtk.Builder.new_from_string(applicationWindowXml, -1)
+    const $ = builder.get_object.bind(builder)
+
+    const win = $('application-window')
+    win.application = application
+    win.set_help_overlay($('shortcuts-window'))
+    const menuButton = $('primary-menu-button')
+
+    const eventController = new Gtk.EventControllerFocus()
+    win.add_controller(eventController)
+    win.connect('notify::is-active', () => {
+        if (!lookupSelection || !win.is_active) return
+        const display = Gdk.Display.get_default()
+        const clipboard = display.get_primary_clipboard()
+        clipboard.read_text_async(null, (_, res) => {
+            try {
+                const text = clipboard.read_text_finish(res).trim()
+                if (text && text !== queryEntry.text) {
+                    queryEntry.text = text
+                    queryEntry.grab_focus()
+                    queryEntry.set_position(-1)
+                    onActivate()
+                }
+            } catch (e) {}
+        })
+    })
+
+    const queryEntry = $('query-entry')
+    const langCombo = $('lang-combo')
+    suggestedLangs.forEach(lang => langCombo.append_text(lang))
+    const langEntry = langCombo.get_child()
+    langEntry.placeholder_text = 'Language'
+    langEntry.tooltip_text = 'Language name or ISO 639-1 code'
+    langEntry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY,
+        'preferences-desktop-locale-symbolic')
+    const completion = new Gtk.EntryCompletion()
+    completion.set_text_column(0)
+    completion.set_model(langCombo.get_model())
+    langEntry.set_completion(completion)
+    langEntry.text = 'English'
+    if (settings) {
+        const flag = Gio.SettingsBindFlags.DEFAULT
+        settings.bind('language', langEntry, 'text', flag)
+    }
+
+    let currentPage
+    const history = []
+    const goBack = () => {
+        if (!history.length) return
+        doLookup(...history.pop(), false)
+        if (!history.length) win.lookup_action('go-back').enabled = false
+    }
+    const pushHistory = () => {
+        if (!currentPage) return
+        history.push(currentPage)
+        win.lookup_action('go-back').enabled = true
+    }
+
+    const stack = $('stack')
+    const doLookup = async (word, language, record = true) => {
+        if (record) pushHistory()
+        stack.visible_child_name = 'loading'
+        const oldResults = stack.get_child_by_name('results')
+        if (oldResults) stack.remove(oldResults)
+        try {
+            const results = await lookup(word, language || 'en')
+            const widget = buildResultsPage(results, (_, uri) => {
+                queryEntry.grab_focus()
+                const internalLink = uri.split(baseWikiRegExp)[1]
+                if (internalLink && wikiNamespaces.every(namespace =>
+                    !internalLink.startsWith(namespace + ':')
+                    && !internalLink.startsWith(namespace + '_talk:'))) {
+                    const [title, lang] = internalLink.split('#')
+                    const word = decodeURIComponent(title).replace(/_/g, ' ')
+                    doLookup(word, lang).catch(e => log(e))
+                    return true
+                }
+            })
+            currentPage = [word, language]
+            stack.add_named(widget, 'results')
+            stack.visible_child_name = 'results'
+        } catch (e) {
+            log(e)
+            stack.visible_child_name = 'error'
+        }
+    }
+    const onActivate = () => doLookup(queryEntry.text, langEntry.text)
+    langEntry.connect('activate', onActivate)
+    queryEntry.connect('activate', onActivate)
+
+    ;[
+        ['win.go-back', ['<Alt>Left'], goBack],
+        ['win.close', ['<Control>w'], () => win.close()],
+        ['win.query-entry', ['<Control>f', 'F6'], () => queryEntry.grab_focus()],
+        ['win.lang-entry', ['<Control>l'], () => langCombo.grab_focus()],
+        ['win.menu', ['F10'], () => menuButton.popup()],
+        ['app.quit', ['<Control>q'], () => application.quit()],
+        ['app.about', [], about(application)],
+    ].map(addAction(win))
+    application.set_accels_for_action('win.show-help-overlay', ['<ctrl>question'])
+    win.lookup_action('go-back').enabled = false
+
+    return win
+}
+
+const app = new Adw.Application({
+    application_id: pkg.name,
+    flags: Gio.ApplicationFlags.FLAGS_NONE,
 })
 
-application.add_main_option('selection',
+app.connect('activate', app =>
+    (app.activeWindow ?? makeApplicationWindow(app)).present())
+
+app.add_main_option('version',
+    'v'.charCodeAt(0), GLib.OptionFlags.NONE, GLib.OptionArg.NONE,
+    'Show version', null)
+
+app.add_main_option('selection',
     0, GLib.OptionFlags.NONE, GLib.OptionArg.NONE,
     'Look up primary selection text', null)
 
-application.connect('activate', app => {
-    const activeWindow = app.activeWindow || new AppWindow(app).getWidget()
-    activeWindow.present()
-})
-
-application.connect('handle-local-options', (application, options) => {
+app.connect('handle-local-options', (app, options) => {
+    if (options.contains('version')) {
+        print(pkg.version)
+        return 0
+    }
     if (options.contains('selection')) lookupSelection = true
     return -1
 })
 
 // see https://stackoverflow.com/a/35237684
 ARGV.unshift(System.programInvocationName)
-application.run(ARGV)
+app.run(ARGV)

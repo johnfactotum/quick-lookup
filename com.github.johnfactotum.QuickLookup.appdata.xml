@@ -4,7 +4,7 @@
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>GPL-3.0-or-later</project_license>
     <name>Quick Lookup</name>
-    <summary>A simple dictionary application powered by Wiktionary</summary>
+    <summary>Look up words quickly</summary>
     <description>
         <p>Quick Lookup is a simple GTK dictionary application powered by Wiktionary™.</p>
         <p>Features include:</p>
@@ -26,6 +26,11 @@
         </screenshot>
     </screenshots>
     <releases>
+        <release version="2.0.0" date="2021-11-14">
+            <description>
+                <p>Ported to GTK 4</p>
+            </description>
+        </release>
         <release version="1.2.0" date="2020-06-20">
             <description>
                 <p>Added new “--selection” command line option. When launched in this mode, it will look up the recently selected text when switching to the window. Binding the command to a global shortcut will allow you to look up words from any app by pressing the shortcut.</p>
