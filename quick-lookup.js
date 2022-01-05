@@ -349,8 +349,8 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
                   <property name="child">
                     <object class="GtkSpinner">
                       <property name="valign">center</property>
-                      <property name="width-request">64</property>
-                      <property name="height-request">64</property>
+                      <property name="width-request">32</property>
+                      <property name="height-request">32</property>
                       <property name="spinning">true</property>
                     </object>
                   </property>
