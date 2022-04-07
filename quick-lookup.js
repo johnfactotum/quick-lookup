@@ -22,8 +22,8 @@ const { GLib, Gio, Gtk, Gdk, WebKit2, Adw } = imports.gi
 const System = imports.system
 
 const pkg = {
-    name: 'com.github.johnfactotum.QuickLookup',
-    version: '2.0.0',
+    name: '@PACKAGE_NAME@',
+    version: '@PACKAGE_VERSION@',
 }
 
 let lookupSelection = false

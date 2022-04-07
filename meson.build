@@ -19,10 +19,13 @@ gtk4_dep = dependency('gtk4')
 webkit_dep = dependency('webkit2gtk-5.0')
 libadwaita_dep = dependency('libadwaita-1')
 
-custom_target('quick-lookup',
-    command : ['cp', '@INPUT@', '@OUTPUT@'],
+bin_conf = configuration_data()
+bin_conf.set('PACKAGE_VERSION', meson.project_version())
+bin_conf.set('PACKAGE_NAME', meson.project_name())
+
+configure_file(
+    configuration: bin_conf,
     input: 'quick-lookup.js',
-    install: true,
     install_dir: bindir,
     install_mode: 'rwxr-xr-x',
     output: 'quick-lookup'
