@@ -23,9 +23,9 @@ Dependencies:
 - `libadwaita`
 - `webkit2gtk4`/`webkit2gtk-5.0`
 
-To install, run `sudo ./install.sh`
+To install, run `meson builddir && sudo meson install -C builddir`
 
-To uninstall, run `sudo ./uninstall.sh`
+To uninstall, run `sudo meson uninstall -C builddir`
 
 An [AUR package](https://aur.archlinux.org/packages/quick-lookup/) is available for Arch Linux and derivatives.
 
