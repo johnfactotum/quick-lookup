@@ -14,43 +14,11 @@
     "modules": [
         {
             "name": "quick-lookup",
-            "buildsystem": "simple",
-            "build-commands" : [
-                "install -D quick-lookup.js /app/bin/quick-lookup",
-                "install -D com.github.johnfactotum.QuickLookup.desktop /app/share/applications/com.github.johnfactotum.QuickLookup.desktop",
-                "install -D com.github.johnfactotum.QuickLookup.appdata.xml /app/share/metainfo/com.github.johnfactotum.QuickLookup.appdata.xml",
-                "install -D com.github.johnfactotum.QuickLookup.svg /app/share/icons/hicolor/scalable/apps/com.github.johnfactotum.QuickLookup.svg",
-                "install -D com.github.johnfactotum.QuickLookup-symbolic.svg /app/share/icons/hicolor/symbolic/apps/com.github.johnfactotum.QuickLookup-symbolic.svg",
-                "install -D com.github.johnfactotum.QuickLookup.gschema.xml /app/share/glib-2.0/schemas/com.github.johnfactotum.QuickLookup.gschema.xml"
-            ],
-            "post-install": [
-                "gtk-update-icon-cache --force --ignore-theme-index ${FLATPAK_DEST}/share/icons/hicolor",
-                "glib-compile-schemas ${FLATPAK_DEST}/share/glib-2.0/schemas"
-            ],
+            "buildsystem": "meson",
             "sources": [
                 {
-                    "type": "file",
-                    "path": "quick-lookup.js"
-                },
-                {
-                    "type": "file",
-                    "path": "com.github.johnfactotum.QuickLookup.desktop"
-                },
-                {
-                    "type": "file",
-                    "path": "com.github.johnfactotum.QuickLookup.appdata.xml"
-                },
-                {
-                    "type": "file",
-                    "path": "com.github.johnfactotum.QuickLookup.svg"
-                },
-                {
-                    "type": "file",
-                    "path": "com.github.johnfactotum.QuickLookup-symbolic.svg"
-                },
-                {
-                    "type": "file",
-                    "path": "com.github.johnfactotum.QuickLookup.gschema.xml"
+                    "type": "dir",
+                    "path": "./"
                 }
             ]
         }
