@@ -452,18 +452,18 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
 </interface>`
 
 const about = application => () => {
-    const aboutDialog = new Gtk.AboutDialog({
-        authors: ['John Factotum'],
-        program_name: 'Quick Lookup',
-        comments: 'Look up words quickly',
-        logo_icon_name: pkg.name,
-        version: pkg.version,
+    const aboutWindow = new Adw.AboutWindow({
+        application_icon: pkg.name,
+        application_name: 'Quick Lookup',
+        developer_name: 'John Factotum',
+        issue_url: 'https://github.com/johnfactotum/quick-lookup/issues',
         license_type: Gtk.License.GPL_3_0,
+        version: pkg.version,
         website: 'https://github.com/johnfactotum/quick-lookup',
         modal: true,
         transient_for: application.active_window
     })
-    aboutDialog.present()
+    aboutWindow.present()
 }
 
 const addAction = window => {
