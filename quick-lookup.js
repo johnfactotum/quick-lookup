@@ -317,12 +317,10 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
           </child>
           <child type="end">
             <object class="GtkMenuButton" id="primary-menu-button">
+              <property name="primary">true</property>
               <property name="icon-name">open-menu-symbolic</property>
-              <property name="popover">
-                <object class="GtkPopoverMenu" id="primary-menu-popover">
-                  <property name="menu-model">primary-menu</property>
-                </object>
-              </property>
+              <property name="menu-model">primary-menu</property>
+              <property name="tooltip-text">Main Menu</property>
             </object>
           </child>
         </object>
@@ -574,7 +572,6 @@ const makeApplicationWindow = application => {
         ['win.close', ['<Control>w'], () => win.close()],
         ['win.query-entry', ['<Control>f', 'F6'], () => queryEntry.grab_focus()],
         ['win.lang-entry', ['<Control>l'], () => langCombo.grab_focus()],
-        ['win.menu', ['F10'], () => menuButton.popup()],
         ['app.quit', ['<Control>q'], () => application.quit()],
         ['app.about', [], about(application)],
     ].map(addAction(win))
