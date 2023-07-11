@@ -25,6 +25,7 @@ const pkg = {
     name: '@PACKAGE_NAME@',
     version: '@PACKAGE_VERSION@',
 }
+GLib.set_prgname(pkg.name)
 
 let lookupSelection = false
 
