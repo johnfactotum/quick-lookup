@@ -16,9 +16,9 @@
 
 imports.gi.versions.Gio = '2.0'
 imports.gi.versions.Gtk = '4.0'
-imports.gi.versions.WebKit2 = '5.0'
+imports.gi.versions.WebKit = '6.0'
 imports.gi.versions.Adw = '1'
-const { GLib, Gio, Gtk, Gdk, WebKit2, Adw } = imports.gi
+const { GLib, Gio, Gtk, Gdk, WebKit, Adw } = imports.gi
 const System = imports.system
 
 const pkg = {
@@ -72,10 +72,10 @@ const scriptRunner = webView => {
     }
     const manager = webView.get_user_content_manager()
     manager.connect(`script-message-received::handler`, (_, result) => {
-        try { handler(JSON.parse(result.get_js_value().to_string())) }
+        try { handler(JSON.parse(result.to_string())) }
         catch (e) { log(e) }
     })
-    const success = manager.register_script_message_handler('handler')
+    const success = manager.register_script_message_handler('handler', null)
     if (!success) throw new Error('failed to register message handler')
 
     const exec = (func, params) => {
@@ -88,14 +88,14 @@ const scriptRunner = webView => {
             .catch(e => globalThis.webkit.messageHandlers.handler.postMessage(
                 JSON.stringify({ token: "${token}", ok: false, payload: e.message })))`
         const promise = makePromise(token)
-        webView.run_javascript(script, null, () => {})
+        webView.evaluate_javascript(script, -1, null, null, null, () => {})
         return promise
     }
     const eval = exp => new Promise((resolve, reject) =>
-        webView.run_javascript(`JSON.stringify(${exp})`, null, (_, result) => {
+        webView.evaluate_javascript(`JSON.stringify(${exp})`, -1, null, null, null, (_, result) => {
             try {
-                const jsResult = webView.run_javascript_finish(result)
-                const str = jsResult.get_js_value().to_string()
+                const jscValue = webView.evaluate_javascript_finish(result)
+                const str = jscValue.to_string()
                 const value = str !== 'undefined' ? JSON.parse(str) : null
                 resolve(value)
             } catch (e) {
@@ -159,8 +159,8 @@ const wiktionary = ({ word, language }) => fetch('${apiURL}' + word)
 globalThis.wiktionary = wiktionary
 })()`
 
-const webView = new WebKit2.WebView({
-    settings: new WebKit2.Settings({
+const webView = new WebKit.WebView({
+    settings: new WebKit.Settings({
         enable_javascript_markup: false,
         enable_write_console_messages_to_stdout: true,
         allow_universal_access_from_file_urls: true,
@@ -300,9 +300,8 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
   <property name="default-width">480</property>
   <property name="title">Quick Lookup</property>
   <property name="content">
-    <object class="GtkBox">
-      <property name="orientation">vertical</property>
-      <child>
+    <object class="AdwToolbarView">
+      <child type="top">
         <object class="AdwHeaderBar">
           <property name="title-widget">
             <object class="GtkSearchEntry" id="query-entry">
@@ -313,7 +312,7 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
           <child type="start">
             <object class="GtkButton">
               <property name="icon-name">go-previous-symbolic</property>
-              <property name="tooltip-text">Go back</property>
+              <property name="tooltip-text">Back</property>
               <property name="action-name">win.go-back</property>
             </object>
           </child>
@@ -372,7 +371,7 @@ const applicationWindowXml = `<?xml version="1.0" encoding="UTF-8"?><interface>
           </child>
         </object>
       </child>
-      <child>
+      <child type="bottom">
         <object class="GtkActionBar">
           <child type="center">
             <object class="GtkComboBoxText" id="lang-combo">

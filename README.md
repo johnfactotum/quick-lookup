@@ -20,8 +20,8 @@ Dependencies:
 
 - `gjs (>= 1.70)`
 - `gtk4`
-- `libadwaita`
-- `webkit2gtk4`/`webkit2gtk-5.0`
+- `libadwaita (>= 1.4)`
+- `webkitgtk-6.0`
 
 To install, run `meson builddir && sudo meson install -C builddir`
 

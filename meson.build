@@ -1,5 +1,5 @@
 project('com.github.johnfactotum.QuickLookup',
-    version: '2.0.0',
+    version: '2.1.0',
     meson_version: '>=0.49'
 )
 
@@ -16,8 +16,8 @@ glib2_dep = dependency('glib-2.0')
 gio2_dep = dependency('gio-2.0')
 gjs_dep = dependency('gjs-1.0', version: '>=1.70')
 gtk4_dep = dependency('gtk4')
-webkit_dep = dependency('webkit2gtk-5.0')
-libadwaita_dep = dependency('libadwaita-1')
+webkit_dep = dependency('webkitgtk-6.0')
+libadwaita_dep = dependency('libadwaita-1', version: '>=1.4')
 
 bin_conf = configuration_data()
 bin_conf.set('PACKAGE_VERSION', meson.project_version())
