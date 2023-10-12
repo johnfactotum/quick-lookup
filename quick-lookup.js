@@ -140,6 +140,7 @@ const wiktionary = ({ word, language }) => fetch('${apiURL}' + word)
         const results = language.length === 2
             ? json[language]
             : Object.values(json).find(x => x[0].language === language)
+                ?? json.other.filter(x => x.language === language)
         results.forEach(el => {
             el.definitions.forEach(x => {
                 x.definition = toPangoMarkup(x.definition, baseURL)
