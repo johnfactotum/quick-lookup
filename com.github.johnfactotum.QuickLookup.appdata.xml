@@ -26,7 +26,12 @@
         </screenshot>
     </screenshots>
     <releases>
-        <release version="2.1.0" date="2023-11-12">
+        <release version="2.1.1" date="2023-10-12">
+            <description>
+                <p>Fix release date</p>
+            </description>
+        </release>
+        <release version="2.1.0" date="2023-10-12">
             <description>
                 <p>Upgraded to GNOME 45</p>
             </description>
