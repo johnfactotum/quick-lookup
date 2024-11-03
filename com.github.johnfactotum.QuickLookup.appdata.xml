@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop">
     <id>com.github.johnfactotum.QuickLookup</id>
+    <launchable type="desktop-id">com.github.johnfactotum.QuickLookup.desktop</launchable>
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>GPL-3.0-or-later</project_license>
     <name>Quick Lookup</name>
     <summary>Look up words quickly</summary>
     <description>
-        <p>Quick Lookup is a simple GTK dictionary application powered by Wiktionary™.</p>
+        <p>Look up words quickly with Quick Lookup, a dictionary application powered by Wiktionary™.</p>
         <p>Features include:</p>
         <ul>
             <li>Lookup definitions for words or phrases</li>
@@ -17,7 +18,9 @@
         </ul>
         <p>Wiktionary is a trademark of the Wikimedia Foundation. This program is not endorsed by or affiliated with the Wikimedia Foundation.</p>
     </description>
-    <developer_name>John Factotum</developer_name>
+    <developer id="io.github.johnfactotum">
+        <name>John Factotum</name>
+    </developer>
     <url type="bugtracker">https://github.com/johnfactotum/quick-lookup/issues</url>
     <url type="homepage">https://github.com/johnfactotum/quick-lookup</url>
     <screenshots>
@@ -26,6 +29,11 @@
         </screenshot>
     </screenshots>
     <releases>
+        <release version="2.1.2" date="2024-11-03">
+            <description>
+                <p>Fix app metadata</p>
+            </description>
+        </release>
         <release version="2.1.1" date="2023-10-12">
             <description>
                 <p>Fix release date</p>
