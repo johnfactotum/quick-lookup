@@ -28,6 +28,10 @@
             <image type="source">https://raw.githubusercontent.com/johnfactotum/quick-lookup/master/screenshot.png</image>
         </screenshot>
     </screenshots>
+    <branding>
+      <color type="primary" scheme_preference="light">#ffbe6f</color>
+      <color type="primary" scheme_preference="dark">#a51d2d</color>
+    </branding>
     <releases>
         <release version="2.1.2" date="2024-11-03">
             <description>
