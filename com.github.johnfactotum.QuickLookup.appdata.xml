@@ -74,4 +74,11 @@
         </release>
     </releases>
     <content_rating type="oars-1.1" />
+    <keywords>
+        <keyword>dictionary</keyword>
+        <keyword>quick lookup</keyword>
+        <keyword>word finder</keyword>
+        <keyword>wikipedia reference</keyword>
+        <keyword>lexicon search</keyword>
+    </keywords>
 </component>
